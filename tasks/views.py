@@ -1,12 +1,13 @@
 from hashlib import new
 from http.client import HTTPResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
 from django.db import IntegrityError
 from django.http import HttpResponse
 from .forms import TaskForm
+from .models import Task
 
 
 # Create your views here.
@@ -46,7 +47,22 @@ def signup(request):
 
 
 def tasks(request):
-    return render(request, "tasks.html")
+    tasks=Task.objects.filter(user=request.user,datecompleted__isnull=True)
+    return render(request, "tasks.html",{'tasks':tasks})
+
+def tasks_detail(request,task_id):
+    if request.method == 'GET':
+        task=get_object_or_404(Task,pk=task_id,user=request.user)
+        form=TaskForm(instance=task)
+        return render(request,'tasks_detail.html',{'task':task,'form':form})
+    else:
+       try:
+            task=get_object_or_404(Task,pk=task_id,user=request.user)
+            form=TaskForm(request.POST,instance=task)
+            form.save()
+            return redirect('tasks')
+       except ValueError:
+        return render(request,'tasks_detail.html',{'task':task,'form':form,'error':'Error updating task'})
 
 
 def create_task(request):
