@@ -1,5 +1,6 @@
 from hashlib import new
 from http.client import HTTPResponse
+from time import timezone
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
@@ -8,6 +9,7 @@ from django.db import IntegrityError
 from django.http import HttpResponse
 from .forms import TaskForm
 from .models import Task
+from django.utils import timezone
 
 
 # Create your views here.
@@ -49,6 +51,32 @@ def signup(request):
 def tasks(request):
     tasks=Task.objects.filter(user=request.user,datecompleted__isnull=True)
     return render(request, "tasks.html",{'tasks':tasks})
+
+def tasks_comleted(request):
+    tasks=Task.objects.filter(user=request.user,datecompleted__isnull=False).order_by('-datecompleted')
+    return render(request, "tasks.html",{'tasks':tasks})
+
+
+def complete_detail(request,task_id):
+    task=get_object_or_404(Task,pk=task_id,user=request.user)
+    if request.method == 'POST':
+        task.datecompleted = timezone.now()
+        task.save()
+        return redirect('tasks')
+
+    return render(request, 'complete_deatil.html')
+def delete_task(request,task_id):
+    task=get_object_or_404(Task,pk=task_id,user=request.user)
+    if request.method == 'POST':
+        task.delete()
+
+       
+        
+        return redirect('tasks')
+
+    return render(request, 'complete_deatil.html')    
+
+
 
 def tasks_detail(request,task_id):
     if request.method == 'GET':
